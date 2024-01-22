@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparing Rust vs. Javascript hashing speed</title>
+</head>
+
+<body>
+    <h1></h1>
+    JS: <div id="jsResult"></div>
+    <br>
+    Rust: <div id="rustResult"></div>
+
+    <script src="text.js"></script>
+
+    <script type="module">
+        /*
+            load WASM module
+        */
+        const imports = {
+            wbg: {
+                __wbg_alert_8755b7883b6ce0ef: function (message) {
+                    console.warn(`Alert from WASM: ${message}`);
+                },
+                __wbindgen_string_new: function (message) {
+                    console.warn(`Alert from WASM: ${message}`);
+                },
+                __wbindgen_object_drop_ref: function (message) {
+                    console.warn(`Alert from WASM: ${message}`);
+                }
+            }
+        };
+        var wasmCode = await fetch('http://127.0.0.1:8080/pkg/hello_wasm_bg.wasm');
+        const instance = (await WebAssembly.instantiateStreaming(wasmCode, imports)).instance;
+
+        var value = Math.pow(10, 10);
+        (function runJSCode() {
+            const { results, duration } = runTimedCode(() => instance.exports.factorial(value));
+            setResults("rustResult", `${results} calculated in ${duration}ms`);
+        })();
+    </script>
+    <script type="module">
+        function jsHash(key) {
+            let hash = key.length;
+            for (let i = 0; i < key.length; i++) {
+                hash += key.charCodeAt(i);
+            }
+            return hash % 717387;
+        }
+        function factorial(n) {
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        var value = Math.pow(10, 10);
+        (function runJSCode() {
+            const { results, duration } = runTimedCode(() => factorial(value));
+            setResults("jsResult", `${results} calculated in ${duration}ms`);
+        })();
+    </script>
+</body>
+
+</html>
